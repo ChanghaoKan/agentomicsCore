@@ -111,16 +111,18 @@ record_figure <- function(obj, step, path, description) {
   if (is.character(val)) paste0('"', val, '"') else format(val)
 }
 
-# Search the decision log for a parameter value recorded at a previous step.
-#
-# Used by downstream functions to auto-pull upstream choices (e.g. ndim
-# selected during sc_pca is reused by sc_harmony, sc_umap, sc_cluster
-# unless overridden).
-#
-# @param obj AgentOmics object.
-# @param param_name Name of the parameter to look up.
-# @param from_step Optional, restrict search to a specific step name.
-# @return The most recently recorded value, or NULL if not found.
+#' Search the decision log for a previously recorded parameter value
+#'
+#' Lets downstream functions auto-pull upstream choices — e.g. the
+#' `ndim` selected during `sc_pca` is reused by `sc_harmony` /
+#' `sc_umap` / `sc_cluster` unless overridden. Searches most-recent
+#' first.
+#'
+#' @param obj An AgentOmics object.
+#' @param param_name Name of the parameter to look up.
+#' @param from_step Optional; restrict the search to a specific step name.
+#' @return The most recently recorded value, or `NULL` if not found.
+#' @export
 find_in_decisions <- function(obj, param_name, from_step = NULL) {
   for (d in rev(obj@decisions)) {
     if (!is.null(from_step) && d$step != from_step) next

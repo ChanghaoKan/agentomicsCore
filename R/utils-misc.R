@@ -1,3 +1,7 @@
+# Misc utilities shared across agentomicsCore and exposed for downstream
+# packages. Exported on the `%||%` infix so dependent packages can use it
+# without re-declaring.
+
 #' Null-coalescing (default value) operator
 #'
 #' Returns `a` if it is non-`NULL` and non-empty (`length(a) > 0`),
