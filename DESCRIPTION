@@ -1,0 +1,40 @@
+Package: agentomicsCore
+Type: Package
+Title: Framework for LLM-Orchestrated, Audited Bioinformatics Pipelines
+Version: 0.1.0
+Authors@R: person(given = "Changhao", family = "Kan",
+                  email = "kch_ynu@163.com", role = c("aut", "cre"))
+Description: Generic R-side infrastructure for building agent-friendly,
+    fully auditable bioinformatics pipelines. Provides an S4 container
+    (AgentOmics) that accumulates a decision log and an executable R
+    script alongside whatever data payload it holds (Seurat,
+    SingleCellExperiment, GRanges, &c.). Ships a multi-provider LLM
+    chat function factory (Anthropic, OpenAI, DeepSeek, Grok, Qwen,
+    Kimi, Ollama, OpenAI-compatible) with per-call token usage
+    tracking, an HTML report renderer with a section-extension hook,
+    and checkpoint I/O. Designed as the foundation for downstream
+    domain packages such as scAgentKit (single-cell RNA-seq),
+    atacAgentKit, chipAgentKit, spatialAgentKit, and others.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.1.0)
+Imports:
+    methods,
+    utils,
+    qs2
+Suggests:
+    httr2,
+    jsonlite,
+    base64enc,
+    openssl,
+    magick,
+    png,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+URL: https://github.com/ChanghaoKan/agentomicsCore
+BugReports: https://github.com/ChanghaoKan/agentomicsCore/issues
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0

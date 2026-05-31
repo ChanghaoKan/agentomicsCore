@@ -1,0 +1,139 @@
+---
+title: "agentomicsCore: framework overview"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{agentomicsCore: framework overview}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+```
+
+## What this package is
+
+`agentomicsCore` provides the infrastructure for LLM-orchestrated,
+fully-audited bioinformatics pipelines. It is omic-agnostic: domain
+packages (scAgentKit for scRNA-seq, atacAgentKit for ATAC-seq, etc.)
+sit on top of it and contribute the domain-specific tools.
+
+The four big pieces:
+
+1. **`AgentOmics`** — an S4 container that wraps a data payload plus
+   a decision log and reproducible R script.
+2. **`record_step()` / `find_in_decisions()`** — the extension API.
+3. **Multi-provider chat_fn factory** with token tracking.
+4. **`render_report()`** with an `extras` hook for domain extras.
+
+## Architecture sketch
+
+```
++--------------------------+
+|  AgentOmics              |
+|                          |
+|  @data       (ANY)       |
+|  @data_type  (chr tag)   |
+|  @stage      (chr)       |
+|  @decisions  (list)      |
+|  @scripts    (chr vec)   |
+|  @figures    (df)        |
+|  @params     (list)      |
+|  @token_usage(list)      |
+|  @version    (chr)       |
++----------+---------------+
+           |
+           v
+    record_step()
+           |
++----------v---------------+      +-------------------+
+| obj@decisions appended   |      | chat_fn factory   |
+| obj@scripts appended     |      | chat_claude(), .. |
+| obj@params merged        |      | chat_deepseek(),..|
+| obj@stage optionally upd |      +---------+---------+
++--------------------------+                |
+                                            v
+                                +----------------------+
+                                |  per-call token      |
+                                |  records into        |
+                                |  agentomicsCore::    |
+                                |    token_state       |
+                                +----------+-----------+
+                                           |
+                                           v
+                                attach_step_tokens(obj, step, t0)
+                                           |
+                                obj@token_usage[[step]] populated
+```
+
+## Hello world
+
+```{r}
+library(agentomicsCore)
+
+# Wrap any BioC-ish payload
+obj <- AgentOmics(my_data, data_type = "seurat",
+                  initial_script = '# loaded my data')
+
+# Issue an LLM call
+chat <- chat_claude()
+resp <- chat(system = "You are a careful bioinformatician.",
+             user   = "Suggest 3 QC checks.")
+
+# See the per-call token usage
+token_usage_summary()$total
+```
+
+## Writing a downstream package
+
+A minimal downstream function:
+
+```{r}
+my_qc <- function(obj, threshold = 1000, ..., rationale = NULL) {
+  stopifnot(methods::is(obj, "AgentOmics"))
+
+  # Snapshot tokens at entry so per-step attribution works
+  t0 <- length(agentomicsCore::token_state$records)
+
+  # ... your work, possibly involving chat_fn calls ...
+
+  obj <- agentomicsCore::record_step(
+    obj            = obj,
+    step_name      = "my_qc",
+    function_name  = "my_qc",
+    params         = list(threshold = threshold),
+    rationale      = rationale %||% "default",
+    script_snippet = sprintf("obj <- my_qc(obj, threshold = %s)", threshold),
+    new_stage      = "qc_done"
+  )
+
+  agentomicsCore::attach_step_tokens(obj, "my_qc", t0)
+}
+```
+
+## Reporting with domain extras
+
+```{r}
+render_report(
+  obj,
+  path  = "report.html",
+  extras = list(
+    my_section = function(o) {
+      stuff <- o@params$my_section_data
+      if (is.null(stuff)) return("")
+      sprintf("<section><h2>My domain section</h2><p>%s</p></section>",
+              esc_html(stuff$summary))
+    }
+  )
+)
+```
+
+## See also
+
+- `scAgentKit` for a full single-cell instantiation.
+- `vignette("scAgentKit-pbmc3k", package = "scAgentKit")` for an
+  end-to-end pipeline example.
