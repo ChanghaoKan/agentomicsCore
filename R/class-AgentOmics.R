@@ -36,6 +36,7 @@
 #'
 #' @name AgentOmics-class
 #' @rdname AgentOmics-class
+#' @importFrom methods setClass setMethod new is validObject slotNames as callNextMethod setValidity show
 #' @exportClass AgentOmics
 methods::setClass(
   "AgentOmics",
