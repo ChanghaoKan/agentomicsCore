@@ -19,10 +19,10 @@
 #' }
 #'
 #' @param model Character. Claude model ID. Defaults to
-#'   "claude-sonnet-4-5" — best price/intelligence ratio for the kinds
-#'   of structured-decision and vision tasks scAgentKit uses. Pass
-#'   "claude-opus-4-7" for the highest-intelligence model (more
-#'   expensive; note Opus 4.7 ignores `temperature`).
+#'   `"claude-sonnet-4-5"`. Override this with a model identifier supported
+#'   by your endpoint. Provider-side availability, capabilities, and pricing
+#'   can change; this wrapper omits `temperature` for model IDs matching
+#'   `"opus-4-7"`.
 #' @param api_key Character. The API key. Defaults to
 #'   `Sys.getenv("ANTHROPIC_API_KEY")` for convenience but you can pass
 #'   it directly: `make_chat_fn_claude(api_key = "sk-ant-...")`.
@@ -125,11 +125,6 @@ make_chat_fn_claude <- function(
     stop("Package 'httr2' is required for make_chat_fn_claude(). ",
          "Install with install.packages('httr2').")
   }
-  if (!requireNamespace("base64enc", quietly = TRUE)) {
-    stop("Package 'base64enc' is required for image input. ",
-         "Install with install.packages('base64enc').")
-  }
-
   # Opus 4.7 dropped temperature support; omit it on that model.
   send_temperature <- !grepl("opus-4-7", model)
 
@@ -139,6 +134,10 @@ make_chat_fn_claude <- function(
     # vision works best with the image positioned before the question.
     user_content <- list()
     if (!is.null(image_path)) {
+      if (!requireNamespace("base64enc", quietly = TRUE)) {
+        stop("Package 'base64enc' is required for image input. ",
+             "Install with install.packages('base64enc').")
+      }
       if (!file.exists(image_path)) {
         stop(sprintf("image_path does not exist: %s", image_path))
       }

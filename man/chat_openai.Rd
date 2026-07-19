@@ -21,6 +21,7 @@ chat_openai(
 \item{...}{Forwarded to [make_chat_fn_openai_compatible()].}
 }
 \description{
-For OpenAI's own API. Most users will pick `gpt-4o-mini` for cost
-or `gpt-4o` for quality (both vision-capable).
+Convenience factory for OpenAI's API. Override the default model with one
+available to the configured account; model availability and pricing can
+change independently of this package.
 }

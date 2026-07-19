@@ -1,7 +1,7 @@
-#' AgentOmics: S4 container for agent-driven omics analysis
+#' AgentOmics: S4 container for provenance-tracked omics analysis
 #'
 #' An S4 class that wraps an arbitrary omics data payload (a Seurat object, SingleCellExperiment, GRanges, RangedSummarizedExperiment, or a list of any of these)
-#' together with decision logs, reproducible script
+#' together with decision logs, generated script
 #' snippets, figure metadata, and stage tracking. Tool functions in
 #' downstream packages (scAgentKit, atacAgentKit, etc.) take and return
 #' an AgentOmics, accumulating state as the pipeline progresses.
@@ -18,14 +18,15 @@
 #' @slot decisions List of decision records. Each element is a list with
 #'   fields: step, function_name, timestamp, params, rationale,
 #'   success.
-#' @slot scripts Character vector of R script snippets; concatenating these
-#'   reproduces the analysis from scratch.
+#' @slot scripts Character vector of R script snippets intended as a review
+#'   and reconstruction aid. Downstream packages determine whether the
+#'   concatenated snippets are independently runnable.
 #' @slot figures Data frame with columns step, path, description,
 #'   recording figures generated during the pipeline.
 #' @slot params Flat list of the most recently applied parameters (useful
 #'   for quick inspection; full history lives in @@decisions).
 #' @slot token_usage List of per-step LLM token consumption summaries
-#'   (added in v0.2.0). One entry per pipeline step that involved an LLM
+#'   (originating in scAgentKit v0.2.0). One entry per pipeline step that involved an LLM
 #'   call. Each entry is a list with `input_tokens`, `output_tokens`,
 #'   `cached_tokens`, `n_calls`, and a `by_model` data frame.
 #' @slot version Character, the version (and ideally package name) of the framework that created this
@@ -91,7 +92,7 @@ methods::setClass(
 #'   non-Seurat-class members, `"seurat"` otherwise.
 #' @param initial_script Optional character string recording how the input
 #'   was loaded (e.g. the readRDS call); will be prepended to the
-#'   reproducible script.
+#'   generated script trace.
 #' @param package_name Optional name of the constructing framework
 #'   package (e.g. `"scAgentKit"`). Used to stamp `@@version` from
 #'   `packageVersion(package_name)`. If `NULL`, agentomicsCore's own
@@ -211,13 +212,14 @@ get_decisions <- function(obj) {
   obj@decisions
 }
 
-#' Return the accumulated reproducible R script
+#' Return the accumulated generated R script
 #'
 #' Concatenates all recorded script snippets, separated by blank lines,
-#' yielding a self-contained R script that reproduces the analysis.
+#' yielding a script trace. Its standalone executability depends on the
+#' snippets supplied by the downstream package and should be reviewed.
 #'
 #' @param obj An AgentOmics object.
-#' @return Character string containing the full reproducible script.
+#' @return Character string containing the accumulated script snippets.
 #' @export
 get_script <- function(obj) {
   stopifnot(methods::is(obj, "AgentOmics"))

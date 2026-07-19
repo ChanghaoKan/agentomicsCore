@@ -16,10 +16,10 @@ make_chat_fn_claude(
 }
 \arguments{
 \item{model}{Character. Claude model ID. Defaults to
-"claude-sonnet-4-5" — best price/intelligence ratio for the kinds
-of structured-decision and vision tasks scAgentKit uses. Pass
-"claude-opus-4-7" for the highest-intelligence model (more
-expensive; note Opus 4.7 ignores `temperature`).}
+`"claude-sonnet-4-5"`. Override this with a model identifier supported
+by your endpoint. Provider-side availability, capabilities, and pricing
+can change; this wrapper omits `temperature` for model IDs matching
+`"opus-4-7"`.}
 
 \item{api_key}{Character. Authentication token. Resolution order:
 (1) explicit `api_key` argument; (2) `ANTHROPIC_AUTH_TOKEN` env var

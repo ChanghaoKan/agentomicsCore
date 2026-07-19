@@ -2,7 +2,7 @@
 % Please edit documentation in R/class-AgentOmics.R
 \name{get_script}
 \alias{get_script}
-\title{Return the accumulated reproducible R script}
+\title{Return the accumulated generated R script}
 \usage{
 get_script(obj)
 }
@@ -10,9 +10,10 @@ get_script(obj)
 \item{obj}{An AgentOmics object.}
 }
 \value{
-Character string containing the full reproducible script.
+Character string containing the accumulated script snippets.
 }
 \description{
 Concatenates all recorded script snippets, separated by blank lines,
-yielding a self-contained R script that reproduces the analysis.
+yielding a script trace. Its standalone executability depends on the
+snippets supplied by the downstream package and should be reviewed.
 }

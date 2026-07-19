@@ -2,7 +2,7 @@
 #'
 #' Produces a single HTML file summarising the entire pipeline: stage
 #' progression, decision log, embedded figures, LLM token usage, and the
-#' full reproducible R script. Figures are base64-embedded so the HTML is
+#' accumulated R script trace. Figures are base64-embedded so the HTML is
 #' portable (no accompanying image folder needed).
 #'
 #' Downstream packages (scAgentKit, atacAgentKit, ...) typically wrap this
@@ -13,8 +13,8 @@
 #' @param path Output HTML path. Default "analysis_report.html".
 #' @param title Character, report title shown in the HTML. If NULL,
 #'   a default based on the object's stage is used.
-#' @param include_script Logical, whether to embed the full reproducible
-#'   script inline. Default TRUE.
+#' @param include_script Logical, whether to embed the accumulated script
+#'   snippets inline. Default TRUE.
 #' @param include_params Logical, whether to include full parameter
 #'   details (can be verbose). Default TRUE.
 #' @param extras A named list of section-renderer functions, each of
@@ -97,7 +97,7 @@ render_report <- function(obj,
   script_html <- if (isTRUE(include_script)) {
     full <- paste(obj@scripts, collapse = "\n\n")
     sprintf(
-      '<section><h2>Reproducible script</h2><pre class="script"><code>%s</code></pre></section>',
+      '<section><h2>Generated script trace</h2><p>Review before execution; standalone replay depends on the downstream package.</p><pre class="script"><code>%s</code></pre></section>',
       esc_html(full)
     )
   } else ""
@@ -349,4 +349,3 @@ esc_html <- function(x) {
   if (is.null(b64)) return(NULL)
   sprintf("data:%s;base64,%s", mime, b64)
 }
-

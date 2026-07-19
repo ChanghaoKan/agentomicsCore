@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use agentomicsCore in your research, please cite this software."
+title: "agentomicsCore: Infrastructure for human-in-the-loop bioinformatics pipelines"
+authors:
+  - family-names: "Kan"
+    given-names: "Changhao"
+    email: "kch_ynu@163.com"
+    affiliation: "Shenzhen Bay Laboratory"
+version: 0.1.1
+date-released: 2026-07-20
+url: "https://github.com/ChanghaoKan/agentomicsCore"
+repository-code: "https://github.com/ChanghaoKan/agentomicsCore"
+license: MIT
+type: software
+keywords:
+  - bioinformatics
+  - human-in-the-loop
+  - provenance
+  - LLM

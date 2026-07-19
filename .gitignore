@@ -6,3 +6,4 @@
 *.Rcheck/
 *.tar.gz
 .DS_Store
+check/

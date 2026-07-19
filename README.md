@@ -1,15 +1,17 @@
 # agentomicsCore
 
-> **A generic R framework for LLM-orchestrated, fully audited bioinformatics pipelines.**
+[![R-CMD-check](https://github.com/ChanghaoKan/agentomicsCore/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ChanghaoKan/agentomicsCore/actions/workflows/R-CMD-check.yaml)
 
-`agentomicsCore` is the substrate that domain-specific agent toolkits build on. It provides:
+> **Experimental infrastructure for human-in-the-loop, provenance-tracked bioinformatics workflows.**
 
-- **`AgentOmics`** — an S4 container that wraps an arbitrary BioC payload (Seurat / SingleCellExperiment / GRanges / RangedSummarizedExperiment / any list-of-these) and accumulates a decision log + reproducible R script as the pipeline runs.
-- **`record_step()` / `find_in_decisions()`** — the extension API for downstream packages to log every decision with parameters, rationale, and timestamp.
-- **Multi-provider chat factory** — `chat_claude()`, `chat_openai()`, `chat_deepseek()`, `chat_grok()`, `chat_qwen()`, `chat_kimi()`, `make_chat_fn_openai_compat()`. Anthropic and OpenAI-compatible schemas both supported. Vision-capable where the provider allows.
-- **Per-call token tracking** — every chat_fn call records `{input, output, cached}` tokens to a package-level accumulator. `token_usage_summary()` for global totals, `attach_step_tokens()` to attribute per-pipeline-step.
+`agentomicsCore` is the shared infrastructure used by domain-specific toolkits. It provides:
+
+- **`AgentOmics`** — an S4 container that can wrap an arbitrary data payload and store decision records, script snippets, figures, parameters, and checkpoints alongside it.
+- **`record_step()` / `find_in_decisions()`** — an extension API for downstream packages to record parameters, rationales, and timestamps.
+- **Multi-provider chat factory** — `chat_claude()`, `chat_openai()`, `chat_deepseek()`, `chat_grok()`, `chat_qwen()`, `chat_kimi()`, and `make_chat_fn_openai_compatible()` (`make_chat_fn_openai_compat()` is retained for compatibility). Anthropic and OpenAI-compatible schemas are supported; image input depends on the selected provider/model.
+- **Best-effort token tracking** — built-in chat factories record `{input, output, cached}` token fields when the provider returns usage metadata. Custom chat functions must call `token_record()` themselves.
 - **`render_report()`** — single-file portable HTML report with a `extras` hook for domain-specific section renderers.
-- **`save_checkpoint()` / `load_checkpoint()`** — qs2-backed persistence with `upgrade_checkpoint()` for forward compatibility.
+- **`save_checkpoint()` / `load_checkpoint()`** — qs2-backed persistence with a limited `upgrade_checkpoint()` migration helper.
 
 This package does **not** ship any single-cell, ATAC, ChIP, or other domain-specific logic. Those live in dedicated packages built on top of it.
 
@@ -17,7 +19,7 @@ This package does **not** ship any single-cell, ATAC, ChIP, or other domain-spec
 
 | Package | Domain | Status |
 |---|---|---|
-| [scAgentKit](https://github.com/ChanghaoKan/scAgentKit) | scRNA-seq | v0.3.0 |
+| [scAgentKit](https://github.com/ChanghaoKan/scAgentKit) | scRNA-seq | v0.4.0 |
 | atacAgentKit | ATAC-seq | planned |
 | chipAgentKit | ChIP-seq | planned |
 | spatialAgentKit | Spatial transcriptomics | planned |
@@ -25,7 +27,8 @@ This package does **not** ship any single-cell, ATAC, ChIP, or other domain-spec
 ## Installation
 
 ```r
-remotes::install_github("ChanghaoKan/agentomicsCore")
+if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
+remotes::install_github("ChanghaoKan/agentomicsCore@v0.1.1")
 ```
 
 ## Quick start
@@ -33,23 +36,21 @@ remotes::install_github("ChanghaoKan/agentomicsCore")
 ```r
 library(agentomicsCore)
 
-# Build a container around any BioC object
-obj <- AgentOmics(my_seurat_or_sce_or_granges, data_type = "seurat",
-                  initial_script = '# loaded my data')
+# Build a container around a concrete payload
+counts <- matrix(c(1, 0, 3, 2), nrow = 2,
+                 dimnames = list(c("G1", "G2"), c("C1", "C2")))
+obj <- AgentOmics(counts, data_type = "matrix",
+                  initial_script = "counts <- readRDS('counts.rds')")
 
 # Use the LLM chat factory
 chat <- chat_claude()    # uses ANTHROPIC_API_KEY env var
 response <- chat(
-  system = "You are a careful bioinformatician.",
-  user   = "Summarise the strengths and weaknesses of MAD-based QC."
+  system_prompt = "You are a careful bioinformatician.",
+  user_prompt   = "Summarise the strengths and weaknesses of MAD-based QC."
 )
 
-# Every chat_fn call is metered
+# Usage appears only when the provider returns a usage block
 token_usage_summary()$total
-# $ n_calls : 1
-# $ input_tokens : 47
-# $ output_tokens : 312
-# ...
 ```
 
 ## How downstream packages use it
@@ -58,16 +59,17 @@ A downstream package follows this pattern (see scAgentKit for a complete example
 
 ```r
 # In atacAgentKit/R/whatever.R
-my_qc_function <- function(obj, ..., rationale = NULL) {
+my_qc_function <- function(obj, threshold = 1000, rationale = NULL) {
   stopifnot(methods::is(obj, "AgentOmics"))
-  ...do work...
+  # Perform domain work here, then record what was done.
+  if (is.null(rationale)) rationale <- "Threshold selected by the analyst."
   agentomicsCore::record_step(
     obj            = obj,
     step_name      = "atac_qc",
     function_name  = "my_qc_function",
     params         = list(threshold = threshold),
-    rationale      = rationale %||% "default rationale",
-    script_snippet = '# the R code to reproduce this step',
+    rationale      = rationale,
+    script_snippet = '# Script skeleton for this step',
     new_stage      = "qc_done"
   )
 }
@@ -75,18 +77,22 @@ my_qc_function <- function(obj, ..., rationale = NULL) {
 
 ## Why a separate package
 
-Three reasons:
+The package is separate so that:
 
-1. **Code reuse.** scAgentKit's S4 container + decision log + chat factory + report rendering + token tracking are not single-cell-specific. Future ATAC / ChIP / spatial packages would otherwise duplicate ~2000 lines of identical infrastructure.
-2. **A stable target for the methods paper.** "An LLM-orchestrated bioinformatics framework with single-cell instantiation" is a stronger contribution than "yet another LLM annotation tool".
-3. **Allowing external contributions in unowned domains.** Anyone who wants to add proteomics, microbiome, or any other omic instance can do so without forking scAgentKit.
+1. provenance, reporting, checkpoint, and provider code can be reused;
+2. downstream packages can keep domain logic separate from orchestration; and
+3. experimental domain packages can evolve without forking scAgentKit.
+
+## Prototype status
+
+This is an early research-software prototype. A recorded decision log is not proof that a decision is correct, and generated script snippets are not guaranteed to form a standalone replay for every downstream package. Inspect exported code, pin dependencies and model identifiers, retain the original inputs, and validate all biological conclusions independently.
 
 ## Citation
 
 If you use this package in research, please cite both `agentomicsCore` and whichever downstream package you used:
 
 ```
-Kan, Changhao. agentomicsCore: A framework for LLM-orchestrated audited bioinformatics pipelines. (2026). https://github.com/ChanghaoKan/agentomicsCore
+Kan, Changhao. agentomicsCore: Infrastructure for human-in-the-loop, provenance-tracked bioinformatics workflows. Version 0.1.1 (2026). https://github.com/ChanghaoKan/agentomicsCore
 ```
 
 ## License

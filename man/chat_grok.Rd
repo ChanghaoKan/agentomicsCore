@@ -12,9 +12,8 @@ chat_grok(
 )
 }
 \arguments{
-\item{model}{Default `"grok-4-1-fast"` (vision OK, 2M context).
-Use `"grok-4-1-fast-non-reasoning"` for the cheapest option,
-or `"grok-code-fast-1"` for code tasks.}
+\item{model}{Default `"grok-4-1-fast"`; pass another model identifier
+supported by the configured endpoint.}
 
 \item{api_key_env}{Default `"XAI_API_KEY"`.}
 
@@ -23,7 +22,6 @@ or `"grok-code-fast-1"` for code tasks.}
 \item{...}{Forwarded to [make_chat_fn_openai_compatible()].}
 }
 \description{
-Cheap, fast, with real-time web knowledge and OpenAI-compatible
-vision. Good for budget-conscious testing of vision-dependent
-steps like [sc_select_pcs_visual()].
+OpenAI-compatible xAI preset that can attach images when `vision = TRUE`.
+Confirm that the selected model supports image input before use.
 }

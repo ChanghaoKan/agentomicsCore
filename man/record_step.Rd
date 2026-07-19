@@ -30,8 +30,8 @@ preserved).}
 \item{rationale}{Human-readable explanation of why this step was taken
 (ideally LLM-generated or defaulted to a template).}
 
-\item{script_snippet}{Character string with the R code that reproduces
-this step; appended to `obj@scripts`.}
+\item{script_snippet}{Character string with R code or a script skeleton
+describing this step; appended to `obj@scripts`.}
 
 \item{new_stage}{Optional character; if provided, updates `obj@stage`.}
 
@@ -41,9 +41,10 @@ this step; appended to `obj@scripts`.}
 The updated AgentOmics object.
 }
 \description{
-Appends a decision record and a reproducible script snippet to the
+Appends a decision record and a generated script snippet to the
 object, merges step parameters into `obj@params`, and optionally
-advances `obj@stage`. Every tool function in a downstream package
-calls this at the end so the returned object carries a complete audit
-trail.
+advances `obj@stage`. Downstream tool functions can call this at the end
+so the returned object carries a provenance record. The downstream
+package remains responsible for the
+scientific validity and executability of each recorded snippet.
 }

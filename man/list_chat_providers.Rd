@@ -11,9 +11,9 @@ Invisibly returns a data frame with the same info.
 }
 \description{
 Print a human-readable summary of the chat_fn presets shipped with
-scAgentKit. For each, shows the helper function, default model,
+agentomicsCore. For each, shows the helper function, default model,
 default environment variable for the API key, vision support, and
-which scAgentKit pipeline steps it's suitable for.
+basic configuration notes.
 }
 \details{
 This is meant as discoverability: type `list_chat_providers()` to
