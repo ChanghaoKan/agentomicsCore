@@ -1,4 +1,4 @@
-# agentomicsCore 0.1.1 (2026-07-20)
+# agentomicsCore 0.1.1 (2026-07-21)
 
 * Record provider-returned usage metadata for the preferred
   `make_chat_fn_openai_compatible()` path, including the DeepSeek, Grok,
