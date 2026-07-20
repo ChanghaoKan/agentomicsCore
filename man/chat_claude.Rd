@@ -11,8 +11,8 @@ chat_claude(
 )
 }
 \arguments{
-\item{model}{Default `"claude-sonnet-4-6"`. Use `"claude-opus-4-7"`
-for the highest-intelligence model.}
+\item{model}{Default `"claude-sonnet-4-6"`; pass another model identifier
+supported by the configured endpoint.}
 
 \item{api_key_env}{Default `"ANTHROPIC_API_KEY"`.}
 
@@ -20,6 +20,6 @@ for the highest-intelligence model.}
 }
 \description{
 Convenience alias for [make_chat_fn_claude()] (see that function for
-full options). Default uses Claude Sonnet 4.6: best price/intelligence
-ratio for the structured decisions and vision tasks scAgentKit uses.
+full options). The default model identifier can be overridden; model
+availability and capabilities are controlled by the provider.
 }

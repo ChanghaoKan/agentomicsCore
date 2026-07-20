@@ -1,20 +1,20 @@
-#' Export a self-contained reproducible R script
+#' Export accumulated R script snippets
 #'
-#' Concatenates all recorded script snippets into a single R file that,
-#' when executed, reproduces the analysis from scratch. A header comment
-#' documents the pipeline metadata.
+#' Concatenates recorded script snippets into a single R file with a metadata
+#' header. Depending on the downstream package, the result may be a runnable
+#' reconstruction or only a script skeleton and must be reviewed before use.
 #'
 #' @param obj An AgentOmics object.
-#' @param path Output file path (default "reproducible_script.R").
+#' @param path Output file path (legacy default "reproducible_script.R").
 #' @param header_comment Optional extra text to include in the file header.
 #' @param libraries Character vector of `library()` calls to emit in the
 #'   preamble. Defaults to `NULL`, in which case no `library()` lines are
-#'   written (the recorded script snippets are assumed to be
-#'   self-contained, or the downstream package supplies its own list).
+#'   written (the downstream package is responsible for supplying any
+#'   required libraries and setup code).
 #'   Downstream packages typically pass e.g.
 #'   `c("Seurat", "dplyr", "tibble", "qs2")`.
 #' @param title Character used in the header comment. Default
-#'   "Reproducible analysis script".
+#'   "Generated analysis script trace".
 #' @param generated_by Character naming the generating package. Default
 #'   "agentomicsCore".
 #'
@@ -24,7 +24,7 @@ export_script <- function(obj,
                           path           = "reproducible_script.R",
                           header_comment = NULL,
                           libraries      = NULL,
-                          title          = "Reproducible analysis script",
+                          title          = "Generated analysis script trace",
                           generated_by   = "agentomicsCore") {
 
   stopifnot(methods::is(obj, "AgentOmics"))

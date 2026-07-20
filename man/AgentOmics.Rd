@@ -16,7 +16,7 @@ non-Seurat-class members, `"seurat"` otherwise.}
 
 \item{initial_script}{Optional character string recording how the input
 was loaded (e.g. the readRDS call); will be prepended to the
-reproducible script.}
+generated script trace.}
 
 \item{package_name}{Optional name of the constructing framework
 package (e.g. `"scAgentKit"`). Used to stamp `@version` from

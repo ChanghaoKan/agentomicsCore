@@ -209,7 +209,7 @@ make_chat_fn_openai_compat <- function(
         input_tokens  = parsed$usage$prompt_tokens,
         output_tokens = parsed$usage$completion_tokens,
         cached_tokens = cache_hit,
-        call_type     = if (is.null(image_path)) "text" else "vision"
+        call_type     = if (isTRUE(has_image)) "vision" else "text"
       )
     }
 

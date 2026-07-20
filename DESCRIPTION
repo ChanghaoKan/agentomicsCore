@@ -1,20 +1,17 @@
 Package: agentomicsCore
 Type: Package
-Title: Framework for LLM-Orchestrated, Audited Bioinformatics Pipelines
-Version: 0.1.0
+Title: Infrastructure for Human-in-the-Loop Bioinformatics Pipelines
+Version: 0.1.1
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
-Description: Generic R-side infrastructure for building agent-friendly,
-    fully auditable bioinformatics pipelines. Provides an S4 container
-    (AgentOmics) that accumulates a decision log and an executable R
-    script alongside whatever data payload it holds (Seurat,
-    SingleCellExperiment, GRanges, &c.). Ships a multi-provider LLM
-    chat function factory (Anthropic, OpenAI, DeepSeek, Grok, Qwen,
-    Kimi, Ollama, OpenAI-compatible) with per-call token usage
-    tracking, an HTML report renderer with a section-extension hook,
-    and checkpoint I/O. Designed as the foundation for downstream
-    domain packages such as scAgentKit (single-cell RNA-seq),
-    atacAgentKit, chipAgentKit, spatialAgentKit, and others.
+Description: Experimental R-side infrastructure for building
+    human-in-the-loop, provenance-tracked bioinformatics workflows.
+    Provides an S4 container (AgentOmics) that stores decision records,
+    generated script snippets, figures, parameters, and an arbitrary data
+    payload. Includes Anthropic and OpenAI-compatible chat-function
+    factories, best-effort token-usage capture when providers return usage
+    metadata, an extensible HTML report renderer, and checkpoint I/O.
+    Designed for downstream domain packages such as scAgentKit.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:

@@ -17,17 +17,18 @@ knitr::opts_chunk$set(
 
 ## What this package is
 
-`agentomicsCore` provides the infrastructure for LLM-orchestrated,
-fully-audited bioinformatics pipelines. It is omic-agnostic: domain
+`agentomicsCore` provides experimental infrastructure for
+human-in-the-loop, provenance-tracked bioinformatics workflows. It is
+omic-agnostic: domain
 packages (scAgentKit for scRNA-seq, atacAgentKit for ATAC-seq, etc.)
 sit on top of it and contribute the domain-specific tools.
 
 The four big pieces:
 
 1. **`AgentOmics`** — an S4 container that wraps a data payload plus
-   a decision log and reproducible R script.
+   decision records and generated script snippets.
 2. **`record_step()` / `find_in_decisions()`** — the extension API.
-3. **Multi-provider chat_fn factory** with token tracking.
+3. **Multi-provider chat_fn factory** with best-effort usage tracking.
 4. **`render_report()`** with an `extras` hook for domain extras.
 
 ## Architecture sketch
@@ -58,8 +59,8 @@ The four big pieces:
 +--------------------------+                |
                                             v
                                 +----------------------+
-                                |  per-call token      |
-                                |  records into        |
+                                | provider-returned    |
+                                | token records into   |
                                 |  agentomicsCore::    |
                                 |    token_state       |
                                 +----------+-----------+
@@ -75,16 +76,18 @@ The four big pieces:
 ```{r}
 library(agentomicsCore)
 
-# Wrap any BioC-ish payload
-obj <- AgentOmics(my_data, data_type = "seurat",
-                  initial_script = '# loaded my data')
+# Wrap a concrete payload
+counts <- matrix(c(1, 0, 3, 2), nrow = 2,
+                 dimnames = list(c("G1", "G2"), c("C1", "C2")))
+obj <- AgentOmics(counts, data_type = "matrix",
+                  initial_script = "counts <- readRDS('counts.rds')")
 
 # Issue an LLM call
 chat <- chat_claude()
-resp <- chat(system = "You are a careful bioinformatician.",
-             user   = "Suggest 3 QC checks.")
+resp <- chat(system_prompt = "You are a careful bioinformatician.",
+             user_prompt   = "Suggest 3 QC checks.")
 
-# See the per-call token usage
+# Usage is available when the provider returns a usage block
 token_usage_summary()$total
 ```
 
@@ -99,14 +102,15 @@ my_qc <- function(obj, threshold = 1000, ..., rationale = NULL) {
   # Snapshot tokens at entry so per-step attribution works
   t0 <- length(agentomicsCore::token_state$records)
 
-  # ... your work, possibly involving chat_fn calls ...
+  # Perform domain work here, possibly involving chat_fn calls.
+  if (is.null(rationale)) rationale <- "Threshold selected by the analyst."
 
   obj <- agentomicsCore::record_step(
     obj            = obj,
     step_name      = "my_qc",
     function_name  = "my_qc",
     params         = list(threshold = threshold),
-    rationale      = rationale %||% "default",
+    rationale      = rationale,
     script_snippet = sprintf("obj <- my_qc(obj, threshold = %s)", threshold),
     new_stage      = "qc_done"
   )
@@ -137,3 +141,10 @@ render_report(
 - `scAgentKit` for a full single-cell instantiation.
 - `vignette("scAgentKit-pbmc3k", package = "scAgentKit")` for an
   end-to-end pipeline example.
+
+## Interpretation
+
+Decision records and exported snippets support review, but they do not
+validate biological conclusions or guarantee a standalone replay. Review
+generated code, retain the original inputs, and record package and model
+versions outside the object when exact reconstruction matters.

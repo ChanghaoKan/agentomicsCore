@@ -4,7 +4,7 @@
 \name{AgentOmics-class}
 \alias{AgentOmics-class}
 \alias{show,AgentOmics-method}
-\title{AgentOmics: S4 container for agent-driven omics analysis}
+\title{AgentOmics: S4 container for provenance-tracked omics analysis}
 \usage{
 \S4method{show}{AgentOmics}(object)
 }
@@ -13,7 +13,7 @@
 }
 \description{
 An S4 class that wraps an arbitrary omics data payload (a Seurat object, SingleCellExperiment, GRanges, RangedSummarizedExperiment, or a list of any of these)
-together with decision logs, reproducible script
+together with decision logs, generated script
 snippets, figure metadata, and stage tracking. Tool functions in
 downstream packages (scAgentKit, atacAgentKit, etc.) take and return
 an AgentOmics, accumulating state as the pipeline progresses.
@@ -37,8 +37,9 @@ such objects (during per-sample / per-condition processing phases).}
 fields: step, function_name, timestamp, params, rationale,
 success.}
 
-\item{\code{scripts}}{Character vector of R script snippets; concatenating these
-reproduces the analysis from scratch.}
+\item{\code{scripts}}{Character vector of R script snippets intended as a
+review and reconstruction aid. Downstream packages determine whether the
+concatenated snippets are independently runnable.}
 
 \item{\code{figures}}{Data frame with columns step, path, description,
 recording figures generated during the pipeline.}
@@ -47,7 +48,7 @@ recording figures generated during the pipeline.}
 for quick inspection; full history lives in @decisions).}
 
 \item{\code{token_usage}}{List of per-step LLM token consumption summaries
-(added in v0.2.0). One entry per pipeline step that involved an LLM
+(originating in scAgentKit v0.2.0). One entry per pipeline step that involved an LLM
 call. Each entry is a list with `input_tokens`, `output_tokens`,
 `cached_tokens`, `n_calls`, and a `by_model` data frame.}
 
@@ -59,4 +60,3 @@ compatibility when loading saved objects.}
 
 \item{\code{updated_at}}{POSIXct timestamp of the last modification.}
 }}
-

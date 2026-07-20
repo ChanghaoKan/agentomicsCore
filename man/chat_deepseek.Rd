@@ -7,15 +7,15 @@
 chat_deepseek(model = "deepseek-chat", api_key_env = "DEEPSEEK_API_KEY", ...)
 }
 \arguments{
-\item{model}{Default `"deepseek-chat"`. Other options:
-`"deepseek-reasoner"` (slower, stronger reasoning).}
+\item{model}{Default `"deepseek-chat"`; pass another model identifier
+supported by the configured endpoint.}
 
 \item{api_key_env}{Default `"DEEPSEEK_API_KEY"`.}
 
 \item{...}{Forwarded to [make_chat_fn_openai_compatible()].}
 }
 \description{
-Cheap, fast, strong on structured-output tasks. Best for marker
-annotation, batch-variable selection, resolution recommendation,
-and other text-only LLM steps in scAgentKit.
+OpenAI-compatible preset for DeepSeek's text endpoint. Model quality,
+availability, and pricing are controlled by the provider and should be
+checked before use.
 }

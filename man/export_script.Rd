@@ -2,33 +2,33 @@
 % Please edit documentation in R/io-export.R
 \name{export_script}
 \alias{export_script}
-\title{Export a self-contained reproducible R script}
+\title{Export accumulated R script snippets}
 \usage{
 export_script(
   obj,
   path = "reproducible_script.R",
   header_comment = NULL,
   libraries = NULL,
-  title = "Reproducible analysis script",
+  title = "Generated analysis script trace",
   generated_by = "agentomicsCore"
 )
 }
 \arguments{
 \item{obj}{An AgentOmics object.}
 
-\item{path}{Output file path (default "reproducible_script.R").}
+\item{path}{Output file path (legacy default "reproducible_script.R").}
 
 \item{header_comment}{Optional extra text to include in the file header.}
 
 \item{libraries}{Character vector of `library()` calls to emit in the
 preamble. Defaults to `NULL`, in which case no `library()` lines are
-written (the recorded script snippets are assumed to be
-self-contained, or the downstream package supplies its own list).
+written (the downstream package is responsible for supplying any
+required libraries and setup code).
 Downstream packages typically pass e.g.
 `c("Seurat", "dplyr", "tibble", "qs2")`.}
 
 \item{title}{Character used in the header comment. Default
-"Reproducible analysis script".}
+"Generated analysis script trace".}
 
 \item{generated_by}{Character naming the generating package. Default
 "agentomicsCore".}
@@ -37,7 +37,7 @@ Downstream packages typically pass e.g.
 Invisibly returns `path`.
 }
 \description{
-Concatenates all recorded script snippets into a single R file that,
-when executed, reproduces the analysis from scratch. A header comment
-documents the pipeline metadata.
+Concatenates recorded script snippets into a single R file with a metadata
+header. Depending on the downstream package, the result may be a runnable
+reconstruction or only a script skeleton and must be reviewed before use.
 }

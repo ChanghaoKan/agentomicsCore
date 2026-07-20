@@ -110,11 +110,12 @@ make_chat_fn_openai_compatible <- function(
   warned_image <- FALSE                  # only warn once per chat_fn
 
   function(system_prompt, user_prompt, image_path = NULL) {
+    has_image <- !is.null(image_path) && isTRUE(supports_vision)
 
     # Build user content
     user_content <- if (is.null(image_path)) {
       user_prompt
-    } else if (!isTRUE(supports_vision)) {
+    } else if (!has_image) {
       if (!warned_image) {
         message(sprintf("[%s] image input ignored (supports_vision = FALSE).",
                         model))
@@ -201,8 +202,59 @@ make_chat_fn_openai_compatible <- function(
       stop("API returned empty content. Raw: ",
            substr(httr2::resp_body_string(resp), 1, 500))
     }
+
+    # Usage metadata is optional across OpenAI-compatible providers. Record
+    # it only after a successful, non-empty response; missing fields become
+    # NA rather than being guessed from prompt text.
+    .record_openai_compatible_usage(
+      parsed     = parsed,
+      base_url   = base_url,
+      model      = model,
+      image_path = image_path,
+      image_sent = has_image
+    )
     txt
   }
+}
+
+# Record the usage block returned by an OpenAI-compatible endpoint. Kept as
+# a small helper so the normalisation logic can be tested without a network
+# request. Providers are not required to return usage metadata.
+.record_openai_compatible_usage <- function(parsed, base_url, model,
+                                             image_path = NULL,
+                                             image_sent = !is.null(image_path)) {
+  usage <- parsed$usage
+  if (is.null(usage)) return(invisible(NULL))
+
+  input_tokens <- usage$prompt_tokens %||%
+                  usage$input_tokens %||%
+                  NA_integer_
+  output_tokens <- usage$completion_tokens %||%
+                   usage$output_tokens %||%
+                   NA_integer_
+  cached_tokens <- usage$prompt_cache_hit_tokens %||%
+                   usage$prompt_tokens_details$cached_tokens %||%
+                   usage$cache_read_input_tokens %||%
+                   NA_integer_
+
+  host <- sub("^[[:alpha:]][[:alnum:]+.-]*://", "", base_url)
+  host <- sub("/.*$", "", host)
+  host <- sub(":.*$", "", host)
+  host <- sub("^(api|www)\\.", "", host)
+  provider_tag <- strsplit(host, "\\.", fixed = FALSE)[[1]][1]
+  if (length(provider_tag) == 0 || is.na(provider_tag) ||
+      !nzchar(provider_tag)) {
+    provider_tag <- "unknown"
+  }
+
+  token_record(
+    provider      = paste0("openai_compat:", provider_tag),
+    model         = parsed$model %||% model,
+    input_tokens  = input_tokens,
+    output_tokens = output_tokens,
+    cached_tokens = cached_tokens,
+    call_type     = if (isTRUE(image_sent)) "vision" else "text"
+  )
 }
 
 # Map file extension to OpenAI-compatible media types.
@@ -227,12 +279,12 @@ make_chat_fn_openai_compatible <- function(
 
 #' DeepSeek chat_fn (text-only)
 #'
-#' Cheap, fast, strong on structured-output tasks. Best for marker
-#' annotation, batch-variable selection, resolution recommendation,
-#' and other text-only LLM steps in scAgentKit.
+#' OpenAI-compatible preset for DeepSeek's text endpoint. Model quality,
+#' availability, and pricing are controlled by the provider and should be
+#' checked before use.
 #'
-#' @param model Default `"deepseek-chat"`. Other options:
-#'   `"deepseek-reasoner"` (slower, stronger reasoning).
+#' @param model Default `"deepseek-chat"`; pass another model identifier
+#'   supported by the configured endpoint.
 #' @param api_key_env Default `"DEEPSEEK_API_KEY"`.
 #' @param ... Forwarded to [make_chat_fn_openai_compatible()].
 #' @export
@@ -250,13 +302,11 @@ chat_deepseek <- function(model       = "deepseek-chat",
 
 #' Grok (xAI) chat_fn — vision-capable
 #'
-#' Cheap, fast, with real-time web knowledge and OpenAI-compatible
-#' vision. Good for budget-conscious testing of vision-dependent
-#' steps like [sc_select_pcs_visual()].
+#' OpenAI-compatible xAI preset that can attach images when `vision = TRUE`.
+#' Confirm that the selected model supports image input before use.
 #'
-#' @param model Default `"grok-4-1-fast"` (vision OK, 2M context).
-#'   Use `"grok-4-1-fast-non-reasoning"` for the cheapest option,
-#'   or `"grok-code-fast-1"` for code tasks.
+#' @param model Default `"grok-4-1-fast"`; pass another model identifier
+#'   supported by the configured endpoint.
 #' @param api_key_env Default `"XAI_API_KEY"`.
 #' @param vision Logical. Default TRUE.
 #' @param ... Forwarded to [make_chat_fn_openai_compatible()].
@@ -326,8 +376,9 @@ chat_kimi <- function(model       = "moonshot-v1-32k",
 
 #' OpenAI chat_fn
 #'
-#' For OpenAI's own API. Most users will pick `gpt-4o-mini` for cost
-#' or `gpt-4o` for quality (both vision-capable).
+#' Convenience factory for OpenAI's API. Override the default model with one
+#' available to the configured account; model availability and pricing can
+#' change independently of this package.
 #'
 #' @param model Default `"gpt-4o-mini"`.
 #' @param api_key_env Default `"OPENAI_API_KEY"`.
@@ -350,11 +401,11 @@ chat_openai <- function(model       = "gpt-4o-mini",
 #' Anthropic Claude chat_fn — vision-capable
 #'
 #' Convenience alias for [make_chat_fn_claude()] (see that function for
-#' full options). Default uses Claude Sonnet 4.6: best price/intelligence
-#' ratio for the structured decisions and vision tasks scAgentKit uses.
+#' full options). The default model identifier can be overridden; model
+#' availability and capabilities are controlled by the provider.
 #'
-#' @param model Default `"claude-sonnet-4-6"`. Use `"claude-opus-4-7"`
-#'   for the highest-intelligence model.
+#' @param model Default `"claude-sonnet-4-6"`; pass another model identifier
+#'   supported by the configured endpoint.
 #' @param api_key_env Default `"ANTHROPIC_API_KEY"`.
 #' @param ... Forwarded to [make_chat_fn_claude()].
 #' @export
@@ -372,9 +423,9 @@ chat_claude <- function(model       = "claude-sonnet-4-6",
 #' List supported LLM providers
 #'
 #' Print a human-readable summary of the chat_fn presets shipped with
-#' scAgentKit. For each, shows the helper function, default model,
+#' agentomicsCore. For each, shows the helper function, default model,
 #' default environment variable for the API key, vision support, and
-#' which scAgentKit pipeline steps it's suitable for.
+#' basic configuration notes.
 #'
 #' This is meant as discoverability: type `list_chat_providers()` to
 #' see what's available.
@@ -392,20 +443,17 @@ list_chat_providers <- function() {
     vision       = c("no", "yes (default)", "no (yes for qwen-vl-*)",
                      "no (yes for *-vision-preview)", "yes",
                      "yes"),
-    cost_tier    = c("$$ (cheapest)", "$$ (cheap, vision)",
-                     "$$ (China region best)", "$$ (long-context strong)",
-                     "$$$ (4o-mini cheap, 4o pricey)",
-                     "$$$ (Sonnet 4.6 mid, Opus 4.7 high)"),
-    notes        = c("Best for text-only structured decisions; recommended default for marker annotation.",
-                     "Cheap vision; alternative to Claude for budget testing.",
-                     "Good Chinese-language support; vision via qwen-vl-max.",
-                     "Long context; useful for very large marker tables.",
-                     "Industry standard; gpt-4o-mini cheap, gpt-4o full quality.",
-                     "Strongest at structured reasoning + vision; recommended for sc_select_pcs_visual(). Default sonnet-4-6; opus-4-7 available."),
+    cost_tier    = rep("check provider pricing", 6),
+    notes        = c("Text preset; verify the selected model and endpoint.",
+                     "Image attachment enabled by default; verify model vision support.",
+                     "Text preset; set vision = TRUE only for a vision-capable model.",
+                     "Text preset; set vision = TRUE only for a vision-capable model.",
+                     "Image attachment enabled by default; verify model availability.",
+                     "Anthropic Messages API preset with optional image input."),
     stringsAsFactors = FALSE
   )
 
-  cat("scAgentKit chat_fn providers\n")
+  cat("agentomicsCore chat_fn providers\n")
   cat(strrep("=", 70), "\n", sep = "")
   for (i in seq_len(nrow(df))) {
     cat(sprintf("\n%-18s default model: %s\n", df$helper[i], df$default_model[i]))
