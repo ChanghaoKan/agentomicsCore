@@ -1,3 +1,18 @@
+# Development version
+
+* Add the native xAI Responses protocol adapter `turn_grok()` with one HTTP
+  request, explicit reasoning settings, no server tools or remote-history
+  dependency, and no automatic retry. `prepare_turn_request()` works with its
+  native input array without credential access.
+* Add the opt-in `agentomics.turn.v2` result for this adapter, preserving all
+  native output items, including encrypted reasoning. The convenience assistant
+  message must not replace those items in subsequent history. Existing
+  `agentomics.turn.v1` and text interfaces remain unchanged.
+* Preserve available usage and representable USD ticks after calls. Visible
+  output limits are not total token or monetary limits. Mocked HTTP tests do
+  not constitute live model qualification; real smoke and downstream support
+  remain pending.
+
 # agentomicsCore 0.2.0
 
 * Add `make_turn_fn_openai_compatible()` for one structured, non-streaming
