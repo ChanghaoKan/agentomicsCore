@@ -1,4 +1,9 @@
-# Development version
+# agentomicsCore 0.3.0
+
+* Accept and preserve the optional nonnegative integer `index` on function
+  calls. A live DeepSeek Flash response includes this field in non-streaming
+  replies; v0.2.0 incorrectly rejects it. Reject malformed or duplicate indexes
+  and retain the original calls unchanged in continuation history.
 
 * Add the native xAI Responses protocol adapter `turn_grok()` with one HTTP
   request, explicit reasoning settings, no server tools or remote-history
@@ -10,8 +15,9 @@
   `agentomics.turn.v1` and text interfaces remain unchanged.
 * Preserve available usage and representable USD ticks after calls. Visible
   output limits are not total token or monetary limits. Mocked HTTP tests do
-  not constitute live model qualification; real smoke and downstream support
-  remain pending.
+  not constitute biological validation. Authorized synthetic live protocol
+  smoke passed for DeepSeek Flash and grok-4.7; downstream product qualification
+  remains separate.
 
 # agentomicsCore 0.2.0
 
