@@ -14,28 +14,29 @@ make_chat_fn_openai_compatible(
   temperature = 0,
   timeout_secs = 180,
   extra_headers = NULL,
-  extra_body = NULL
+  extra_body = NULL,
+  structured_response = FALSE
 )
 }
 \arguments{
 \item{base_url}{Character. Endpoint base URL, e.g.
-`"https://api.deepseek.com/v1"`, `"https://api.x.ai/v1"`,
-`"https://api.openai.com/v1"`. Should end at `/v1` (or wherever
-the API roots `chat/completions` under). Trailing slash optional.}
+\code{"https://api.deepseek.com/v1"}, \code{"https://api.x.ai/v1"},
+\code{"https://api.openai.com/v1"}. Should end at \verb{/v1} (or wherever
+the API roots \code{chat/completions} under). Trailing slash optional.}
 
 \item{model}{Character. Provider-specific model ID, e.g.
-`"deepseek-chat"`, `"grok-4-1-fast"`, `"gpt-4o-mini"`.}
+\code{"deepseek-chat"}, \code{"grok-4-1-fast"}, \code{"gpt-4o-mini"}.}
 
 \item{api_key}{Character. The actual key. If NULL (default), read
-from environment variable named by `api_key_env`.}
+from environment variable named by \code{api_key_env}.}
 
 \item{api_key_env}{Character. Environment variable name to look up
-the key from. Default `"OPENAI_API_KEY"`. Examples:
-`"DEEPSEEK_API_KEY"`, `"XAI_API_KEY"`, `"DASHSCOPE_API_KEY"`.
-Pass `""` for endpoints that need no key (local Ollama).}
+the key from. Default \code{"OPENAI_API_KEY"}. Examples:
+\code{"DEEPSEEK_API_KEY"}, \code{"XAI_API_KEY"}, \code{"DASHSCOPE_API_KEY"}.
+Pass \code{""} for endpoints that need no key (local Ollama).}
 
 \item{supports_vision}{Logical. If TRUE, image_path arguments are
-sent as `image_url` content blocks. If FALSE (default), they are
+sent as \code{image_url} content blocks. If FALSE (default), they are
 silently ignored with a one-time message. Set TRUE only for
 models you've confirmed handle images (e.g. grok-4-1-fast,
 gpt-4o, qwen-vl-max). Text-only models will error out on image
@@ -43,42 +44,50 @@ blocks.}
 
 \item{max_tokens}{Integer. Default 2000.}
 
-\item{temperature}{Numeric in [0, 2]. Default 0 (deterministic).}
+\item{temperature}{Numeric between 0 and 2. Default 0 (deterministic).}
 
 \item{timeout_secs}{Numeric. Per-request timeout. Default 180.}
 
 \item{extra_headers}{Optional named character vector of extra HTTP
-headers to send. Useful for OpenRouter (`HTTP-Referer`, `X-Title`)
-or Azure (`api-key`).}
+headers to send. Useful for OpenRouter (\code{HTTP-Referer}, \code{X-Title})
+or Azure (\code{api-key}).}
 
 \item{extra_body}{Optional named list of extra JSON fields merged
 into the request body. Useful for provider-specific knobs like
-`enable_search`, `reasoning_effort`, `top_p`, etc.}
+\code{enable_search}, \code{reasoning_effort}, \code{top_p}, etc.}
+
+\item{structured_response}{Logical. Default FALSE preserves the text return
+value. TRUE returns content, normalized usage, numeric raw_usage, model,
+and whitelisted response_metadata, with sanitized structured errors.
+Use \code{\link[=make_turn_fn_openai_compatible]{make_turn_fn_openai_compatible()}} for complete tool conversations.}
 }
 \value{
-A function `chat_fn(system_prompt, user_prompt, image_path = NULL)`
-  returning the assistant's text response.
+A function \code{chat_fn(system_prompt, user_prompt, image_path = NULL)}
+returning the assistant's text response, or the structured response list
+when \code{structured_response = TRUE}.
 }
 \description{
-Builds a `chat_fn` that talks to any OpenAI-compatible chat
+Builds a \code{chat_fn} that talks to any OpenAI-compatible chat
 completions endpoint. Most providers (DeepSeek, xAI/Grok, Kimi/Moonshot,
 Qwen/DashScope, Doubao, Zhipu/GLM, OpenAI itself, Together, Groq,
 OpenRouter, local Ollama / vLLM) implement the OpenAI Chat Completions
 protocol exactly:
 }
 \details{
-- POST `<base_url>/chat/completions`
-- Auth via `Authorization: Bearer <key>` header
-- JSON body with `{model, messages: [{role, content}], temperature, max_tokens, ...}`
-- Multimodal images via content blocks: `{type: "image_url", image_url: {url: "data:image/png;base64,..."}}`
+\itemize{
+\item POST \verb{<base_url>/chat/completions}
+\item Auth via \verb{Authorization: Bearer <key>} header
+\item JSON body with \verb{\{model, messages: [\{role, content\}], temperature, max_tokens, ...\}}
+\item Multimodal images via content blocks: \verb{\{type: "image_url", image_url: \{url: "data:image/png;base64,..."\}\}}
+}
 
 Use this factory directly, or use one of the provider-specific
-helpers ([chat_deepseek()], [chat_grok()], [chat_qwen()], [chat_kimi()],
-[chat_openai()]) which preset the URL/key/model for you.
+helpers (\code{\link[=chat_deepseek]{chat_deepseek()}}, \code{\link[=chat_grok]{chat_grok()}}, \code{\link[=chat_qwen]{chat_qwen()}}, \code{\link[=chat_kimi]{chat_kimi()}},
+\code{\link[=chat_openai]{chat_openai()}}) which preset the URL/key/model for you.
 
-For Anthropic Claude, use [make_chat_fn_claude()] instead — Anthropic's
+For Anthropic Claude, use \code{\link[=make_chat_fn_claude]{make_chat_fn_claude()}} instead — Anthropic's
 Messages API is NOT OpenAI-compatible (different headers, system field
-lifted out of messages, image blocks use `source.base64` not `image_url`).
+lifted out of messages, image blocks use \code{source.base64} not \code{image_url}).
 }
 \examples{
 \dontrun{

@@ -38,7 +38,7 @@
 #'   gpt-4o, qwen-vl-max). Text-only models will error out on image
 #'   blocks.
 #' @param max_tokens Integer. Default 2000.
-#' @param temperature Numeric in [0, 2]. Default 0 (deterministic).
+#' @param temperature Numeric between 0 and 2. Default 0 (deterministic).
 #' @param timeout_secs Numeric. Per-request timeout. Default 180.
 #' @param extra_headers Optional named character vector of extra HTTP
 #'   headers to send. Useful for OpenRouter (`HTTP-Referer`, `X-Title`)
@@ -46,9 +46,14 @@
 #' @param extra_body Optional named list of extra JSON fields merged
 #'   into the request body. Useful for provider-specific knobs like
 #'   `enable_search`, `reasoning_effort`, `top_p`, etc.
+#' @param structured_response Logical. Default FALSE preserves the text return
+#'   value. TRUE returns content, normalized usage, numeric raw_usage, model,
+#'   and whitelisted response_metadata, with sanitized structured errors.
+#'   Use [make_turn_fn_openai_compatible()] for complete tool conversations.
 #'
 #' @return A function `chat_fn(system_prompt, user_prompt, image_path = NULL)`
-#'   returning the assistant's text response.
+#'   returning the assistant's text response, or the structured response list
+#'   when `structured_response = TRUE`.
 #'
 #' @examples
 #' \dontrun{
@@ -75,6 +80,7 @@
 #'     supports_vision = FALSE
 #'   )
 #' }
+#' @md
 #' @export
 make_chat_fn_openai_compatible <- function(
     base_url,
@@ -86,7 +92,11 @@ make_chat_fn_openai_compatible <- function(
     temperature     = 0,
     timeout_secs    = 180,
     extra_headers   = NULL,
-    extra_body      = NULL) {
+    extra_body      = NULL,
+    structured_response = FALSE) {
+
+  .turn_require(.turn_bool(structured_response),
+                "structured_response must be a boolean.")
 
   if (!requireNamespace("httr2", quietly = TRUE)) {
     stop("Package 'httr2' is required. install.packages('httr2').")
@@ -157,13 +167,25 @@ make_chat_fn_openai_compatible <- function(
       extra_headers
     )
 
-    resp <- httr2::request(base_url) |>
+    req <- httr2::request(base_url) |>
       httr2::req_url_path_append("chat", "completions") |>
       httr2::req_headers(!!!as.list(headers)) |>
       httr2::req_body_json(body) |>
       httr2::req_timeout(timeout_secs) |>
-      httr2::req_error(is_error = function(r) FALSE) |>
-      httr2::req_perform()
+      httr2::req_error(is_error = function(r) FALSE)
+    if (structured_response) req <- httr2::req_options(req, followlocation = FALSE)
+    resp <- tryCatch(httr2::req_perform(req), error = function(e) {
+      if (!structured_response) stop(e)
+      .turn_abort("transport_error", "Structured-response transport failed; delivery is unknown.",
+                  delivery = "unknown")
+    })
+
+    if (structured_response) {
+      result <- .turn_parse_response(resp, model, secrets = api_key)
+      return(list(content = result$message$content, usage = result$usage,
+                  model = result$metadata$model, raw_usage = result$raw_usage,
+                  response_metadata = result$metadata))
+    }
 
     status <- httr2::resp_status(resp)
     parsed <- tryCatch(httr2::resp_body_json(resp),
