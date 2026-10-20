@@ -29,6 +29,25 @@ turn_factory <- function(...) make_turn_fn_openai_compatible(
   base_url = "https://example.test/v1", model = "configured-model", api_key = "mock-secret", ...)
 turn_error <- function(expr) tryCatch(force(expr), agentomics_turn_error = identity)
 
+test_that("non-streaming DeepSeek call indexes survive receive and continuation", {
+  call <- c(list(index = 0L), turn_call())
+  local_mocked_bindings(req_perform = function(...) turn_response(
+    turn_payload(content = "", calls = list(call), finish = "tool_calls")), .package = "httr2")
+  out <- turn_factory()(turn_messages(), list(turn_tool()))
+  expect_identical(out$message$tool_calls, list(call))
+  history <- c(turn_messages(), list(out$message,
+    list(role = "tool", tool_call_id = call$id, content = "{}")))
+  prepared <- prepare_turn_request(turn_factory(), history)
+  expect_identical(prepared$body$messages[[3]]$tool_calls, list(call))
+  for (index in list(-1, .5, "0", NULL)) {
+    bad <- call; bad["index"] <- list(index)
+    expect_false(.turn_valid_calls(list(bad)))
+  }
+  duplicate <- call; duplicate$id <- "another"
+  expect_false(.turn_valid_calls(list(call, duplicate)))
+  expect_true(.turn_valid_calls(list(turn_call())))
+})
+
 test_that("prepare is key-free and exactly matches serialized HTTP bytes", {
   withr::local_envvar(AGENTOMICS_TURN_TEST_KEY = NA_character_)
   fn <- make_turn_fn_openai_compatible("https://example.test/v1", "model",

@@ -82,3 +82,10 @@ agentomicsCore::AgentOmics(granges_list, data_type = "granges_list")
 agentomicsCore::record_step(obj, step_name = "...", ...)
 agentomicsCore::render_report(obj, path = "report.html", extras = list(...))
 ```
+# Development patch
+
+* Accept and preserve the optional nonnegative integer `index` on function
+  calls. A live DeepSeek Flash response includes this field in non-streaming
+  replies; v0.2.0 incorrectly rejects it. Reject malformed or duplicate indexes
+  and retain the original calls unchanged in continuation history.
+
