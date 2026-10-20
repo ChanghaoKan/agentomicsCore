@@ -141,10 +141,10 @@ make_turn_fn_openai_compatible <- function(
 #' Uses the same validation and serialization as the turn function. No key
 #' lookup or network operation occurs. The returned JSON is the exact UTF-8
 #' request body used when dispatching with the same arguments; callers can
-#' hash it for authorization and estimate token costs before dispatch.
+#' hash it for authorization before dispatch.
 #'
 #' @param turn_fn A function from [make_turn_fn_openai_compatible()] or
-#'   [turn_deepseek()].
+#'   [turn_deepseek()] or [turn_grok()].
 #' @param ... The same arguments passed to the structured turn function.
 #' @return A list with `body` (the JSON-ready request body) and `json` (the
 #'   exact serialized request body). It has no key, headers, or endpoint.
@@ -262,12 +262,17 @@ turn_deepseek <- function(model = "deepseek-flash", api_key = NULL,
 .turn_valid_calls <- function(calls) {
   if (!.turn_array(calls) || !length(calls)) return(FALSE)
   valid <- vapply(calls, function(x) {
-    .turn_fields(x, c("id", "type", "function"), c("id", "type", "function")) &&
+    .turn_fields(x, c("index", "id", "type", "function"), c("id", "type", "function")) &&
+      (!"index" %in% names(x) || (.turn_number(x$index) && x$index >= 0 &&
+        x$index == floor(x$index))) &&
       .turn_string(x$id) && identical(x$type, "function") &&
       .turn_fields(x[["function"]], c("name", "arguments"), c("name", "arguments")) &&
       .turn_string(x[["function"]]$name) && .turn_string(x[["function"]]$arguments, empty = TRUE)
   }, logical(1))
-  all(valid) && !anyDuplicated(vapply(calls, function(x) x$id, character(1)))
+  indices <- lapply(calls, function(x) if (is.list(x)) x$index else NULL)
+  indices <- Filter(Negate(is.null), indices)
+  all(valid) && !anyDuplicated(vapply(calls, function(x) x$id, character(1))) &&
+    !anyDuplicated(unlist(indices, use.names = FALSE))
 }
 
 .turn_validate_messages <- function(messages) {

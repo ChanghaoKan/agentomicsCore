@@ -8,7 +8,7 @@ prepare_turn_request(turn_fn, ...)
 }
 \arguments{
 \item{turn_fn}{A function from \code{\link[=make_turn_fn_openai_compatible]{make_turn_fn_openai_compatible()}} or
-\code{\link[=turn_deepseek]{turn_deepseek()}}.}
+\code{\link[=turn_deepseek]{turn_deepseek()}} or \code{\link{turn_grok}}.}
 
 \item{...}{The same arguments passed to the structured turn function.}
 }
@@ -20,5 +20,5 @@ exact serialized request body). It has no key, headers, or endpoint.
 Uses the same validation and serialization as the turn function. No key
 lookup or network operation occurs. The returned JSON is the exact UTF-8
 request body used when dispatching with the same arguments; callers can
-hash it for authorization and estimate token costs before dispatch.
+hash it for authorization before dispatch.
 }
