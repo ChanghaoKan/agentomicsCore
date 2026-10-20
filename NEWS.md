@@ -1,8 +1,23 @@
-# Development patch
+# agentomicsCore 0.3.0
+
 * Accept and preserve the optional nonnegative integer `index` on function
   calls. A live DeepSeek Flash response includes this field in non-streaming
   replies; v0.2.0 incorrectly rejects it. Reject malformed or duplicate indexes
   and retain the original calls unchanged in continuation history.
+
+* Add the native xAI Responses protocol adapter `turn_grok()` with one HTTP
+  request, explicit reasoning settings, no server tools or remote-history
+  dependency, and no automatic retry. `prepare_turn_request()` works with its
+  native input array without credential access.
+* Add the opt-in `agentomics.turn.v2` result for this adapter, preserving all
+  native output items, including encrypted reasoning. The convenience assistant
+  message must not replace those items in subsequent history. Existing
+  `agentomics.turn.v1` and text interfaces remain unchanged.
+* Preserve available usage and representable USD ticks after calls. Visible
+  output limits are not total token or monetary limits. Mocked HTTP tests do
+  not constitute biological validation. Authorized synthetic live protocol
+  smoke passed for DeepSeek Flash and grok-4.7; downstream product qualification
+  remains separate.
 
 # agentomicsCore 0.2.0
 
@@ -88,3 +103,10 @@ agentomicsCore::AgentOmics(granges_list, data_type = "granges_list")
 agentomicsCore::record_step(obj, step_name = "...", ...)
 agentomicsCore::render_report(obj, path = "report.html", extras = list(...))
 ```
+# Development patch
+
+* Accept and preserve the optional nonnegative integer `index` on function
+  calls. A live DeepSeek Flash response includes this field in non-streaming
+  replies; v0.2.0 incorrectly rejects it. Reject malformed or duplicate indexes
+  and retain the original calls unchanged in continuation history.
+

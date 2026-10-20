@@ -1,7 +1,7 @@
 Package: agentomicsCore
 Type: Package
 Title: Infrastructure for Human-in-the-Loop Bioinformatics Pipelines
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
 Description: Experimental R-side infrastructure for building

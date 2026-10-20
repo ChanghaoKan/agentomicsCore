@@ -141,10 +141,10 @@ make_turn_fn_openai_compatible <- function(
 #' Uses the same validation and serialization as the turn function. No key
 #' lookup or network operation occurs. The returned JSON is the exact UTF-8
 #' request body used when dispatching with the same arguments; callers can
-#' hash it for authorization and estimate token costs before dispatch.
+#' hash it for authorization before dispatch.
 #'
 #' @param turn_fn A function from [make_turn_fn_openai_compatible()] or
-#'   [turn_deepseek()].
+#'   [turn_deepseek()] or [turn_grok()].
 #' @param ... The same arguments passed to the structured turn function.
 #' @return A list with `body` (the JSON-ready request body) and `json` (the
 #'   exact serialized request body). It has no key, headers, or endpoint.
