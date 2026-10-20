@@ -1,3 +1,23 @@
+# agentomicsCore 0.2.0
+
+* Add `make_turn_fn_openai_compatible()` for one structured, non-streaming
+  request with complete text message history, function definitions, tool-call
+  identifiers, nullable assistant content, and provider usage independent of
+  text output. It does not execute tools, retry requests, or follow redirects.
+* Add `prepare_turn_request()` to validate and serialize the exact outgoing
+  JSON before authorization and budget reservation, without reading an API key
+  or making an HTTP request.
+* Add `turn_deepseek()` with thinking disabled and temperature zero. DeepSeek
+  is the only supported structured provider preset in this release; other
+  compatible endpoints require their own capability verification.
+* Add opt-in `structured_response = TRUE` to the existing preferred chat
+  factory and its presets. The default text interface is unchanged. This lets
+  downstream clients consume usage and response metadata without adapting
+  dependency function bodies.
+* Validate local protocol envelopes, preserve numeric usage evidence, and
+  report sanitized errors with explicit delivery state. Add offline mocked
+  HTTP tests; no live provider validation or biological evaluation is claimed.
+
 # agentomicsCore 0.1.1 (2026-07-21)
 
 * Record provider-returned usage metadata for the preferred

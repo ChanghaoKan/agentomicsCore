@@ -1,7 +1,7 @@
 Package: agentomicsCore
 Type: Package
 Title: Infrastructure for Human-in-the-Loop Bioinformatics Pipelines
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: person(given = "Changhao", family = "Kan",
                   email = "kch_ynu@163.com", role = c("aut", "cre"))
 Description: Experimental R-side infrastructure for building
@@ -10,7 +10,8 @@ Description: Experimental R-side infrastructure for building
     generated script snippets, figures, parameters, and an arbitrary data
     payload. Includes Anthropic and OpenAI-compatible chat-function
     factories, best-effort token-usage capture when providers return usage
-    metadata, an extensible HTML report renderer, and checkpoint I/O.
+    metadata, structured text and function-call turns with explicit conversation
+    state, an extensible HTML report renderer, and checkpoint I/O.
     Designed for downstream domain packages such as scAgentKit.
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -28,10 +29,11 @@ Suggests:
     magick,
     png,
     testthat (>= 3.0.0),
+    withr,
     knitr,
     rmarkdown
 URL: https://github.com/ChanghaoKan/agentomicsCore
 BugReports: https://github.com/ChanghaoKan/agentomicsCore/issues
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.1
