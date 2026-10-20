@@ -262,12 +262,17 @@ turn_deepseek <- function(model = "deepseek-flash", api_key = NULL,
 .turn_valid_calls <- function(calls) {
   if (!.turn_array(calls) || !length(calls)) return(FALSE)
   valid <- vapply(calls, function(x) {
-    .turn_fields(x, c("id", "type", "function"), c("id", "type", "function")) &&
+    .turn_fields(x, c("index", "id", "type", "function"), c("id", "type", "function")) &&
+      (!"index" %in% names(x) || (.turn_number(x$index) && x$index >= 0 &&
+        x$index == floor(x$index))) &&
       .turn_string(x$id) && identical(x$type, "function") &&
       .turn_fields(x[["function"]], c("name", "arguments"), c("name", "arguments")) &&
       .turn_string(x[["function"]]$name) && .turn_string(x[["function"]]$arguments, empty = TRUE)
   }, logical(1))
-  all(valid) && !anyDuplicated(vapply(calls, function(x) x$id, character(1)))
+  indices <- lapply(calls, function(x) if (is.list(x)) x$index else NULL)
+  indices <- Filter(Negate(is.null), indices)
+  all(valid) && !anyDuplicated(vapply(calls, function(x) x$id, character(1))) &&
+    !anyDuplicated(unlist(indices, use.names = FALSE))
 }
 
 .turn_validate_messages <- function(messages) {
