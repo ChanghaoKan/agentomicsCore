@@ -14,6 +14,13 @@
   factory and its presets. The default text interface is unchanged. This lets
   downstream clients consume usage and response metadata without adapting
   dependency function bodies.
+* Compatibility: structured turns and the opt-in `structured_response = TRUE`
+  path require `choices[[1]]$message$role = "assistant"` in the provider's
+  response. Older mock HTTP responses that contain only `message$content`
+  must add this field; they also need a valid `finish_reason`. A received
+  response missing the role is an `agentomics_turn_error` with
+  `delivery = "received"`, not an uncertain delivery. The default text-only
+  interface does not acquire this structured-response requirement.
 * Validate local protocol envelopes, preserve numeric usage evidence, and
   report sanitized errors with explicit delivery state. Add offline mocked
   HTTP tests; no live provider validation or biological evaluation is claimed.
